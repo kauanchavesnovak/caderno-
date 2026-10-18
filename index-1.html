@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meu caderno</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1D2842">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<style>
+:root{
+  --paper:#F8F9FB; --line:#CDD5E0; --ink:#1D2842; --soft:#6A7590; --red:#D23B45; --blue:#2F55B8; --chip:#E8ECF4;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]){--paper:#141922; --line:#29313F; --ink:#DDE4F2; --soft:#8D98B3; --red:#FF7780; --blue:#8DB0FF; --chip:#1F2633;}
+}
+:root[data-theme="dark"]{--paper:#141922; --line:#29313F; --ink:#DDE4F2; --soft:#8D98B3; --red:#FF7780; --blue:#8DB0FF; --chip:#1F2633;}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:'Patrick Hand','Segoe Print','Bradley Hand',cursive,sans-serif;font-size:20px;line-height:36px;padding-bottom:84px;-webkit-text-size-adjust:100%}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:0;padding:0}
+:focus-visible{outline:2px solid var(--blue);outline-offset:2px;border-radius:4px}
+.page{max-width:560px;margin:0 auto;padding:0 20px 24px 44px;position:relative;
+  background-image:repeating-linear-gradient(to bottom,transparent 0,transparent 35px,var(--line) 35px,var(--line) 36px);
+  background-position:0 0;min-height:100vh}
+.page::before{content:"";position:absolute;left:32px;top:0;bottom:0;width:1px;background:var(--red);opacity:.45}
+h1{font-size:30px;font-weight:400;margin:0;line-height:72px;height:72px;text-transform:none}
+h2{font-size:22px;font-weight:400;margin:28px 0 4px;color:var(--blue);line-height:36px}
+.sub{color:var(--soft);margin:6px 0}
+.nav-day{display:flex;align-items:center;gap:8px;min-height:44px;margin:8px 0}
+.nav-day .btn{height:40px;line-height:40px;min-width:40px;padding:0 14px}
+.nav-day .date{flex:1;text-align:center;line-height:28px}
+.back{display:flex;justify-content:center;margin:0 0 8px}
+.back .btn{height:36px;line-height:36px}
+.btn{padding:0 12px;border-radius:18px;background:var(--chip);color:var(--ink)}
+.btn.ghost{background:none;color:var(--blue);text-decoration:underline;text-underline-offset:4px}
+.spacer{flex:1}
+.kinds{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 12px}
+.kind{height:40px;line-height:40px;padding:0 14px;border-radius:20px;background:var(--chip);color:var(--soft);white-space:nowrap}
+.kind[aria-pressed="true"]{background:var(--ink);color:var(--paper)}
+.add{display:flex;gap:10px;margin:0 0 16px}
+.add input{flex:1;min-width:0;height:44px;line-height:44px;border:0;border-bottom:2px solid var(--blue);background:transparent;padding:0 2px;border-radius:0}
+.add input::placeholder{color:var(--soft)}
+.add button{background:var(--blue);color:var(--paper);padding:0 16px;border-radius:22px;height:44px;line-height:44px}
+.row{display:flex;align-items:flex-start;min-height:36px}
+.glyph{flex:0 0 30px;text-align:center;font-size:26px;line-height:36px;color:var(--ink);background:none}
+.glyph.done,.glyph.moved{color:var(--red)}
+.star{color:var(--red);flex:0 0 14px;line-height:36px}
+.txt{flex:1;min-width:0;text-align:left;line-height:36px;overflow-wrap:anywhere}
+.row.done .txt{color:var(--soft)}
+.row.cancelled .txt{text-decoration:line-through;color:var(--soft)}
+.row.moved .txt{color:var(--soft)}
+.more{flex:0 0 36px;height:36px;line-height:36px;color:var(--soft);font-size:24px;text-align:center}
+.acts{display:flex;flex-wrap:wrap;gap:4px 6px;padding-left:30px;min-height:36px}
+.acts button{height:30px;line-height:30px;margin:3px 0;padding:0 11px;border-radius:15px;background:var(--chip);font-size:18px}
+.acts .danger{color:var(--red)}
+.empty{color:var(--soft);margin:16px 0;line-height:30px}
+textarea{display:block;width:100%;border:0;background:transparent;resize:none;line-height:36px;padding:0;border-radius:0;overflow:hidden}
+textarea::placeholder{color:var(--soft)}
+.stats{display:flex;justify-content:space-between;gap:8px}
+.stats b{font-weight:400;color:var(--blue)}
+.days{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;height:72px}
+.days button{display:flex;flex-direction:column;align-items:center;justify-content:center;line-height:24px;border-radius:12px;background:var(--chip);font-size:17px}
+.days button.sel{background:var(--ink);color:var(--paper)}
+.days button small{font-size:15px;color:var(--soft)}
+.days button.sel small{color:var(--paper);opacity:.8}
+.legend{display:grid;grid-template-columns:1fr 1fr;column-gap:12px}
+.legend div{display:flex;align-items:center;gap:6px;height:36px}
+.legend i{font-style:normal;width:22px;text-align:center;font-size:24px}
+.week-link{display:block;text-align:left;width:100%}
+.idx{display:flex;justify-content:space-between;width:100%;text-align:left;height:36px;line-height:36px}
+.idx span:last-child{color:var(--soft)}
+nav{position:fixed;left:0;right:0;bottom:0;background:var(--paper);border-top:1px solid var(--line);padding:8px 12px calc(8px + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:8px;z-index:5}
+nav button{flex:1;max-width:180px;height:44px;line-height:44px;border-radius:22px;background:var(--chip);color:var(--soft)}
+nav button[aria-current="page"]{background:var(--ink);color:var(--paper)}
+.card{background:var(--chip);border-radius:14px;padding:18px 16px;margin:8px 0 14px}
+.big{font-size:26px;line-height:34px;margin:0;overflow-wrap:anywhere}
+.choices{display:flex;flex-wrap:wrap;gap:10px;margin:0 0 12px}
+.choices .btn{height:44px;line-height:44px;padding:0 16px;border-radius:22px}
+.box{border:1px solid var(--line);border-radius:10px;background:var(--chip);padding:8px 10px;font-size:15px;line-height:22px;height:130px;overflow:auto;resize:none;margin:8px 0 10px;font-family:ui-monospace,Menlo,monospace}
+.stats{flex-wrap:wrap}
+.acct input{display:block;width:100%;height:44px;line-height:44px;border:0;border-bottom:2px solid var(--blue);background:transparent;margin:6px 0;padding:0 2px;border-radius:0}
+.acct input::placeholder{color:var(--soft)}
+.gear{position:absolute;top:16px;right:16px;width:44px;height:44px;line-height:44px;border-radius:22px;background:var(--chip);color:var(--soft);font-size:24px;text-align:center;z-index:2}
+.gear[aria-current="page"]{background:var(--ink);color:var(--paper)}
+@media (prefers-reduced-motion:no-preference){.row,.acts{animation:in .15s ease-out}}
+@keyframes in{from{opacity:.4}to{opacity:1}}
+</style>
+</head>
+<body>
+<main class="page" id="app"></main>
+<nav aria-label="Seções">
+  <button data-v="hoje">Hoje</button>
+  <button data-v="semana">Semana</button>
+  <button data-v="sumario">Sumário</button>
+</nav>
+
+<script>
+(function(){
+  var KEY = 'caderno-v1';
+  var SUPABASE_URL = 'https://ukmqqpnvnocyvvfwwptk.supabase.co';
+  var SUPABASE_KEY = 'sb_publishable_U_44dwEdeGdUIVJZQeXs6Q_6FEge7Fw';
+  var S = { entries: [], weeks: {}, notes: {}, reports: {}, updatedAt: 0, owner: '' };
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (raw) { var p = JSON.parse(raw); if (p && p.entries) S.entries = p.entries; if (p && p.weeks) S.weeks = p.weeks; if (p && p.notes) S.notes = p.notes; if (p && p.reports) S.reports = p.reports; if (p && p.updatedAt) S.updatedAt = p.updatedAt; if (p && p.owner) S.owner = p.owner; }
+  } catch (e) {}
+  var sb = null, userId = null, userEmail = '', rtChannel = null, synced = false;
+  var dbTimer = null, dbBusy = false, dbDirty = false;
+  var cloudState = 'checking', cloudEl = null;
+  var CLOUD_TXT = {
+    config: 'Falta configurar o Supabase no arquivo index.html (veja o passo a passo). Por enquanto os dados ficam só neste aparelho.',
+    checking: 'Conectando...',
+    out: 'Sem conta conectada. Entre abaixo para sincronizar com seus outros aparelhos.',
+    on: 'Sincronizado. As alterações aparecem nos aparelhos conectados à mesma conta.',
+    error: 'Não consegui sincronizar agora. Seus dados estão salvos neste aparelho e tento de novo na próxima alteração.'
+  };
+  function setCloud(st){ cloudState = st; if (cloudEl) cloudEl.textContent = CLOUD_TXT[st]; }
+  function localSave(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  function payload(){ return { entries:S.entries, weeks:S.weeks, notes:S.notes, reports:S.reports, updatedAt:S.updatedAt }; }
+  function configured(){ return SUPABASE_URL.indexOf('http') === 0 && SUPABASE_KEY.length > 20 && !!window.supabase; }
+  function hasData(){ return S.entries.length || Object.keys(S.weeks).length || Object.keys(S.notes).length || Object.keys(S.reports).length; }
+
+  function flushDb(){
+    if (!sb || !userId || dbBusy || !dbDirty) return;
+    dbBusy = true; dbDirty = false;
+    sb.from('caderno').upsert({ user_id: userId, data: payload(), updated_at: new Date().toISOString() }).then(function(r){
+      dbBusy = false;
+      if (r.error){ dbDirty = true; setCloud('error'); }
+      else { setCloud('on'); if (dbDirty) flushDb(); }
+    }, function(){ dbBusy = false; dbDirty = true; setCloud('error'); });
+  }
+  function save(){
+    S.updatedAt = Date.now();
+    localSave();
+    if (!userId) return;
+    dbDirty = true;
+    clearTimeout(dbTimer);
+    dbTimer = setTimeout(flushDb, 700);
+  }
+  function mergeIn(r, preferLocal){
+    var a = preferLocal ? (r.entries || []).concat(S.entries) : S.entries.concat(r.entries || []);
+    var byId = {}; a.forEach(function(e){ byId[e.id] = e; });
+    S.entries = Object.keys(byId).map(function(k){ return byId[k]; });
+    ['weeks','notes','reports'].forEach(function(f){
+      S[f] = preferLocal ? Object.assign({}, r[f] || {}, S[f]) : Object.assign({}, S[f], r[f] || {});
+    });
+  }
+  function takeRemote(rem){
+    S.entries = rem.entries || []; S.weeks = rem.weeks || {}; S.notes = rem.notes || {}; S.reports = rem.reports || {};
+    S.updatedAt = rem.updatedAt || 0; localSave();
+  }
+  // devolve true se a tela precisa ser redesenhada
+  function reconcile(rem){
+    var lu = S.updatedAt || 0, ru = (rem && rem.updatedAt) || 0;
+    if (!rem){ if (hasData()){ if (!S.updatedAt) S.updatedAt = Date.now(); dbDirty = true; flushDb(); } return false; }
+    if (ru === lu) return false;
+    var pending = dbDirty || dbBusy;
+    if (!synced || (ru > lu && pending)){
+      mergeIn(rem, lu >= ru); S.updatedAt = Date.now(); localSave(); dbDirty = true; flushDb(); return true;
+    }
+    if (ru > lu){ takeRemote(rem); return true; }
+    dbDirty = true; flushDb(); return false;
+  }
+  function softRender(){
+    var a = document.activeElement;
+    if (a && (a.tagName === 'TEXTAREA' || a.tagName === 'INPUT')) return;
+    render();
+  }
+  async function pull(){
+    if (!sb || !userId) return;
+    try {
+      var r = await sb.from('caderno').select('data').eq('user_id', userId).maybeSingle();
+      if (r.error) throw r.error;
+      var changed = reconcile(r.data ? r.data.data : null);
+      synced = true; setCloud('on');
+      if (changed) softRender();
+    } catch (e) { setCloud('error'); }
+  }
+  function stopRealtime(){
+    if (rtChannel && sb){ try { sb.removeChannel(rtChannel); } catch (e) {} }
+    rtChannel = null;
+  }
+  function startRealtime(){
+    stopRealtime();
+    try {
+      rtChannel = sb.channel('caderno-' + userId)
+        .on('postgres_changes', { event:'*', schema:'public', table:'caderno', filter:'user_id=eq.' + userId }, function(p){
+          var d = p.new && p.new.data;
+          if (d && (d.updatedAt || 0) > (S.updatedAt || 0)){ if (reconcile(d)) softRender(); }
+        }).subscribe();
+    } catch (e) {}
+  }
+  async function startSession(session){
+    if (!session){ userId = null; userEmail = ''; synced = false; stopRealtime(); setCloud('out'); return; }
+    userId = session.user.id; userEmail = session.user.email || ''; synced = false;
+    if (S.owner && S.owner !== userId){ S.entries = []; S.weeks = {}; S.notes = {}; S.reports = {}; S.updatedAt = 0; }
+    S.owner = userId; localSave();
+    await pull();
+    startRealtime();
+  }
+  function traduz(m){
+    m = String(m || '');
+    if (/Invalid login/i.test(m)) return 'E-mail ou senha incorretos.';
+    if (/already registered/i.test(m)) return 'Este e-mail já tem conta. Toque em Entrar.';
+    if (/at least|weak/i.test(m)) return 'A senha precisa ter pelo menos 6 caracteres.';
+    if (/not confirmed|confirm/i.test(m)) return 'Confirme seu e-mail pelo link que enviamos e tente de novo.';
+    if (/valid email|invalid format/i.test(m)) return 'Digite um e-mail válido.';
+    return 'Não deu certo: ' + m;
+  }
+  async function doAuth(mode, email, pass, msgEl){
+    if (!sb){ msgEl.textContent = CLOUD_TXT.config; return; }
+    if (!email || !pass){ msgEl.textContent = 'Preencha e-mail e senha.'; return; }
+    msgEl.textContent = 'Aguarde...';
+    try {
+      var r = mode === 'in'
+        ? await sb.auth.signInWithPassword({ email: email, password: pass })
+        : await sb.auth.signUp({ email: email, password: pass });
+      if (r.error){ msgEl.textContent = traduz(r.error.message); return; }
+      var ses = r.data && r.data.session;
+      if (!ses){ msgEl.textContent = 'Conta criada. Confirme pelo link enviado ao seu e-mail e depois toque em Entrar.'; return; }
+      if (userId !== ses.user.id) await startSession(ses);
+      render();
+    } catch (e) { msgEl.textContent = 'Sem conexão. Tente de novo.'; }
+  }
+  async function initCloud(){
+    if (!configured()){ setCloud('config'); return; }
+    try {
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      sb.auth.onAuthStateChange(function(ev, session){
+        setTimeout(function(){
+          if (ev === 'SIGNED_OUT'){ startSession(null).then(function(){ softRender(); }); }
+          else if ((ev === 'INITIAL_SESSION' || ev === 'SIGNED_IN') && session){
+            if (userId !== session.user.id) startSession(session);
+          } else if (ev === 'INITIAL_SESSION' && !session){ setCloud('out'); }
+        }, 0);
+      });
+      document.addEventListener('visibilitychange', function(){
+        if (!document.hidden && userId){ flushDb(); pull(); }
+      });
+      window.addEventListener('online', function(){ if (userId){ flushDb(); pull(); } });
+    } catch (e) { sb = null; setCloud('config'); }
+  }
+
+  var pad = function(n){ return String(n).padStart(2,'0'); };
+  var key = function(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); };
+  var parse = function(k){ var a=k.split('-').map(Number); return new Date(a[0],a[1]-1,a[2]); };
+  var addDays = function(k,n){ var d=parse(k); d.setDate(d.getDate()+n); return key(d); };
+  var mondayOf = function(k){ var d=parse(k); d.setDate(d.getDate()-((d.getDay()+6)%7)); return key(d); };
+  var fmtDay = function(k){ return parse(k).toLocaleDateString('pt-BR',{weekday:'short',day:'numeric',month:'short'}).replace(/\./g,''); };
+  var fmtShort = function(k){ return parse(k).toLocaleDateString('pt-BR',{day:'numeric',month:'short'}); };
+  var weekName = function(m){ return fmtShort(m)+' a '+fmtShort(addDays(m,6)); };
+  var newId = function(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); };
+
+  var today = key(new Date());
+  var view = 'hoje', day = today, week = mondayOf(today), kind = 't', openId = null;
+  var rq = [], ri = 0, backupMsg = '', prevView = 'hoje';
+  var SYM = { t:'•', c:'○', l:'–' };
+  var KIND_NAME = { t:'Tarefa', c:'Compromisso', l:'Lembrete' };
+
+  function h(tag, props){
+    var el = document.createElement(tag);
+    props = props || {};
+    for (var k in props){
+      var v = props[k];
+      if (k === 'class') el.className = v;
+      else if (k === 'text') el.textContent = v;
+      else if (k.slice(0,2) === 'on') el.addEventListener(k.slice(2), v);
+      else if (v === false || v == null) {}
+      else el.setAttribute(k, v === true ? '' : v);
+    }
+    for (var i=2;i<arguments.length;i++){
+      var c = arguments[i];
+      if (c == null || c === false) continue;
+      el.appendChild(typeof c === 'string' ? document.createTextNode(c) : c);
+    }
+    return el;
+  }
+
+  function find(id){ return S.entries.filter(function(e){return e.id===id;})[0]; }
+  function dayEntries(k){ return S.entries.filter(function(e){return e.date===k;}); }
+  function weekEntries(m){ var end=addDays(m,6); return S.entries.filter(function(e){return e.date>=m && e.date<=end;}); }
+
+  function add(text){
+    text = text.trim(); if (!text) return;
+    S.entries.push({ id:newId(), date:day, kind:kind, text:text, status:'open', star:false });
+    save();
+  }
+  function toggle(e, st){ e.status = e.status === st ? 'open' : st; }
+  function postpone(e){
+    if (e.status === 'moved'){
+      var c = find(e.movedTo);
+      if (c && c.status === 'open') S.entries = S.entries.filter(function(x){return x.id!==c.id;});
+      e.status = 'open'; e.movedTo = null; return;
+    }
+    var copy = { id:newId(), date:addDays(e.date,1), kind:e.kind, text:e.text, status:'open', star:e.star };
+    S.entries.push(copy);
+    e.status = 'moved'; e.movedTo = copy.id;
+  }
+
+  function glyph(e){
+    if (e.status === 'done') return 'X';
+    if (e.status === 'moved') return '→';
+    return SYM[e.kind];
+  }
+
+  function entryRow(e){
+    var wrap = document.createElement('div');
+    var isOpen = openId === e.id;
+    var row = h('div', { class:'row '+e.status },
+      h('button', { class:'glyph '+e.status, 'aria-label': e.status==='done' ? 'Desmarcar concluído' : 'Marcar como concluído',
+        onclick:function(){ toggle(e,'done'); save(); render(); } }, glyph(e)),
+      e.star ? h('span', { class:'star', 'aria-label':'Importante' }, '*') : null,
+      h('button', { class:'txt', 'aria-expanded': String(isOpen), onclick:function(){ openId = isOpen ? null : e.id; render(); } }, e.text),
+      h('button', { class:'more', 'aria-label':'Mais ações', onclick:function(){ openId = isOpen ? null : e.id; render(); } }, '⋯')
+    );
+    wrap.appendChild(row);
+    if (isOpen){
+      wrap.appendChild(h('div', { class:'acts' },
+        h('button', { onclick:function(){ toggle(e,'done'); save(); render(); } }, e.status==='done' ? 'Reabrir' : 'Concluir'),
+        h('button', { onclick:function(){ postpone(e); save(); render(); } }, e.status==='moved' ? 'Desfazer adiar' : 'Adiar para amanhã'),
+        h('button', { onclick:function(){ toggle(e,'cancelled'); save(); render(); } }, e.status==='cancelled' ? 'Reabrir' : 'Cancelar'),
+        h('button', { onclick:function(){ e.star = !e.star; save(); render(); } }, e.star ? 'Tirar *' : 'Importante *'),
+        h('button', { class:'danger', onclick:function(){ S.entries = S.entries.filter(function(x){return x.id!==e.id;}); openId=null; save(); render(); } }, 'Apagar')
+      ));
+    }
+    return wrap;
+  }
+
+  function grow(t){ t.style.height='auto'; t.style.height = Math.max(36, t.scrollHeight)+'px'; }
+  function field(obj, prop, placeholder, rows){
+    var t = h('textarea', { rows:String(rows||2), placeholder:placeholder, 'aria-label':placeholder });
+    t.value = obj[prop] || '';
+    t.addEventListener('input', function(){ obj[prop] = t.value; save(); grow(t); });
+    setTimeout(function(){ grow(t); }, 0);
+    return t;
+  }
+  function weekData(m){ if (!S.weeks[m]) S.weeks[m] = { plan:'', review:'', carry:'' }; return S.weeks[m]; }
+
+  function viewHoje(root){
+    root.appendChild(h('h1', { text: day === today ? 'Hoje' : parse(day).toLocaleDateString('pt-BR',{weekday:'long'}) }));
+    root.appendChild(h('div', { class:'nav-day' },
+      h('button', { class:'btn', 'aria-label':'Dia anterior', onclick:function(){ day=addDays(day,-1); openId=null; render(); } }, '‹'),
+      h('span', { class:'date', text: fmtDay(day) }),
+      h('button', { class:'btn', 'aria-label':'Próximo dia', onclick:function(){ day=addDays(day,1); openId=null; render(); } }, '›')
+    ));
+    if (day !== today) root.appendChild(h('div', { class:'back' }, h('button', { class:'btn ghost', onclick:function(){ day=today; render(); } }, 'Voltar a hoje')));
+    var kinds = h('div', { class:'kinds', role:'group', 'aria-label':'Tipo da anotação' });
+    ['t','c','l'].forEach(function(k){
+      kinds.appendChild(h('button', { class:'kind', 'aria-pressed': String(kind===k), onclick:function(){ kind=k; render(true); } }, SYM[k]+' '+KIND_NAME[k]));
+    });
+    root.appendChild(kinds);
+    var input = h('input', { type:'text', id:'newtxt', placeholder:'Nova anotação', 'aria-label':'Nova anotação', autocomplete:'off' });
+    var go = function(){ if (!input.value.trim()) return; add(input.value); render(true); };
+    input.addEventListener('keydown', function(ev){ if (ev.key==='Enter'){ ev.preventDefault(); go(); } });
+    root.appendChild(h('div', { class:'add' }, input, h('button', { onclick:go }, 'Adicionar')));
+    var list = dayEntries(day);
+    if (!list.length) root.appendChild(h('p', { class:'empty' }, 'Nada anotado neste dia. Escreva a primeira linha acima.'));
+    list.forEach(function(e){ root.appendChild(entryRow(e)); });
+    if (list.length && day <= today){
+      var pend = list.filter(function(e){ return e.status==='open' && e.kind!=='l'; }).length;
+      root.appendChild(h('div', { class:'back' }, h('button', { class:'btn', onclick:startReview }, pend ? 'Revisar o dia ('+pend+' em aberto)' : 'Ver resumo do dia')));
+    }
+    if (day <= today){
+      var rp = S.reports[day]; var has = rp && (rp.did || rp.stuck || rp.next);
+      root.appendChild(h('div', { class:'back' }, h('button', { class:'btn', onclick:function(){ view='relatorio'; render(); window.scrollTo(0,0); } }, has ? 'Editar relatório do dia' : 'Escrever relatório do dia')));
+    }
+    return input;
+  }
+
+  function viewSemana(root){
+    var d = weekData(week);
+    root.appendChild(h('h1', { text:'Semana' }));
+    root.appendChild(h('div', { class:'nav-day' },
+      h('button', { class:'btn', 'aria-label':'Semana anterior', onclick:function(){ week=addDays(week,-7); render(); } }, '‹'),
+      h('span', { class:'date', text: weekName(week) }),
+      h('button', { class:'btn', 'aria-label':'Próxima semana', onclick:function(){ week=addDays(week,7); render(); } }, '›')
+    ));
+    if (week !== mondayOf(today)) root.appendChild(h('div', { class:'back' }, h('button', { class:'btn ghost', onclick:function(){ week=mondayOf(today); render(); } }, 'Esta semana')));
+
+    root.appendChild(h('h2', { text:'Check-in' }));
+    root.appendChild(h('p', { class:'sub' }, 'O que preciso fazer nesta semana'));
+    root.appendChild(field(d, 'plan', 'Escreva o plano da semana', 3));
+
+    var days = h('div', { class:'days' });
+    for (var i=0;i<7;i++){
+      (function(k){
+        var n = dayEntries(k).length;
+        var lbl = parse(k).toLocaleDateString('pt-BR',{weekday:'short'}).replace('.','');
+        days.appendChild(h('button', { class: k===today ? 'sel' : '', 'aria-label': fmtDay(k)+', '+n+' anotações',
+          onclick:function(){ day=k; view='hoje'; render(); } },
+          h('span', { text: lbl }), h('small', { text: n ? String(n) : '·' })));
+      })(addDays(week,i));
+    }
+    root.appendChild(h('p', { class:'sub' }, 'Toque em um dia para abrir'));
+    root.appendChild(days);
+
+    var tasks = weekEntries(week).filter(function(e){ return e.kind==='t'; });
+    var done = tasks.filter(function(e){return e.status==='done';}).length;
+    var moved = tasks.filter(function(e){return e.status==='moved';});
+    var canc = tasks.filter(function(e){return e.status==='cancelled';}).length;
+
+    root.appendChild(h('h2', { text:'Check-out' }));
+    root.appendChild(h('p', { class:'sub' }, 'Como foi a semana'));
+    root.appendChild(h('div', { class:'stats' },
+      h('span', {}, 'X ', h('b', { text: done+' de '+tasks.length })),
+      h('span', {}, '→ ', h('b', { text: String(moved.length) })),
+      h('span', {}, 'cancelado ', h('b', { text: String(canc) }))
+    ));
+    if (moved.length){
+      root.appendChild(h('p', { class:'sub' }, 'Adiadas: veja por que não deu para fazer'));
+      moved.forEach(function(e){ root.appendChild(h('div', { class:'row moved' }, h('span', { class:'glyph moved' }, '→'), h('span', { class:'txt' }, e.text))); });
+    }
+    root.appendChild(field(d, 'review', 'O que funcionou e o que não funcionou', 3));
+    root.appendChild(h('p', { class:'sub' }, 'O que levo para a próxima semana'));
+    root.appendChild(field(d, 'carry', 'Escreva aqui', 2));
+  }
+
+  function viewSumario(root){
+    root.appendChild(h('h1', { text:'Sumário' }));
+    root.appendChild(h('h2', { text:'Legenda' }));
+    var L = h('div', { class:'legend' });
+    [['•','tarefa'],['X','concluído'],['○','compromisso'],['→','adiado'],['–','lembrete'],['*','importante']].forEach(function(p){
+      L.appendChild(h('div', {}, h('i', { text:p[0] }), h('span', { text:p[1] })));
+    });
+    L.appendChild(h('div', {}, h('i', { text:'—' }), h('span', { class:'', style:'text-decoration:line-through', text:'cancelado' })));
+    root.appendChild(L);
+
+    root.appendChild(h('h2', { text:'Índice' }));
+    var dates = {};
+    S.entries.forEach(function(e){ dates[e.date]=true; });
+    var ks = Object.keys(dates).sort().reverse();
+    if (!ks.length){ root.appendChild(h('p', { class:'empty' }, 'O índice se monta sozinho conforme você anota.')); return; }
+    var lastW = null;
+    ks.forEach(function(k){
+      var m = mondayOf(k);
+      if (m !== lastW){
+        lastW = m;
+        root.appendChild(h('button', { class:'btn ghost week-link', onclick:function(){ week=m; view='semana'; render(); } }, 'Semana de '+weekName(m)));
+      }
+      var n = dayEntries(k).length;
+      root.appendChild(h('button', { class:'idx', onclick:function(){ day=k; view='hoje'; render(); } },
+        h('span', { text: fmtDay(k) }), h('span', { text: String(n) })));
+    });
+  }
+
+  function startReview(){
+    rq = dayEntries(day).filter(function(e){ return e.status==='open' && e.kind!=='l'; }).map(function(e){ return e.id; });
+    ri = 0; view = 'revisao'; render(); window.scrollTo(0,0);
+  }
+
+  function viewRevisao(root){
+    root.appendChild(h('h1', { text:'Revisar o dia' }));
+    root.appendChild(h('p', { class:'sub' }, fmtDay(day)));
+    while (ri < rq.length && !find(rq[ri])) ri++;
+    if (ri < rq.length){
+      var e = find(rq[ri]);
+      var act = function(fn){ return function(){ fn(e); ri++; save(); render(); }; };
+      root.appendChild(h('p', { class:'sub' }, (ri+1)+' de '+rq.length+'. O que aconteceu com isto?'));
+      root.appendChild(h('div', { class:'card' }, h('p', { class:'big' }, SYM[e.kind]+' '+e.text)));
+      root.appendChild(h('div', { class:'choices' },
+        h('button', { class:'btn', onclick:act(function(x){ x.status='done'; }) }, 'X Concluir'),
+        h('button', { class:'btn', onclick:act(function(x){ postpone(x); }) }, '→ Adiar para amanhã'),
+        h('button', { class:'btn', onclick:act(function(x){ x.status='cancelled'; }) }, 'Cancelar'),
+        h('button', { class:'btn ghost', onclick:act(function(){}) }, 'Deixar como está'),
+        h('button', { class:'btn ghost', onclick:function(){ ri = rq.length; render(); } }, 'Ir para o resumo')
+      ));
+      return;
+    }
+    var list = dayEntries(day);
+    var cnt = function(s){ return list.filter(function(x){ return x.status===s; }).length; };
+    root.appendChild(h('h2', { text:'Resumo do dia' }));
+    root.appendChild(h('div', { class:'stats' },
+      h('span', {}, 'X ', h('b', { text:String(cnt('done')) })),
+      h('span', {}, '→ ', h('b', { text:String(cnt('moved')) })),
+      h('span', {}, 'cancelado ', h('b', { text:String(cnt('cancelled')) })),
+      h('span', {}, 'em aberto ', h('b', { text:String(cnt('open')) }))
+    ));
+    reportFields(root);
+  }
+
+  function dayReport(k){
+    if (!S.reports[k]) S.reports[k] = { did:(typeof S.notes[k] === 'string' ? S.notes[k] : ''), stuck:'', next:'' };
+    return S.reports[k];
+  }
+
+  function reportFields(root){
+    var r = dayReport(day);
+    root.appendChild(h('h2', { text:'Relatório do dia' }));
+    root.appendChild(h('p', { class:'sub' }, 'O que fiz hoje'));
+    root.appendChild(field(r, 'did', 'Conquistas, o que andou', 3));
+    root.appendChild(h('p', { class:'sub' }, 'O que travou ou ficou de fora'));
+    root.appendChild(field(r, 'stuck', 'E por quê', 2));
+    root.appendChild(h('p', { class:'sub' }, 'O que levo para amanhã'));
+    root.appendChild(field(r, 'next', 'Prioridades do próximo dia', 2));
+    root.appendChild(h('div', { class:'back' }, h('button', { class:'btn', onclick:function(){ view='hoje'; render(); window.scrollTo(0,0); } }, 'Fechar o dia')));
+  }
+
+  function viewRelatorio(root){
+    root.appendChild(h('h1', { text:'Relatório' }));
+    root.appendChild(h('p', { class:'sub' }, fmtDay(day)));
+    reportFields(root);
+  }
+
+  function viewAjustes(root){
+    root.appendChild(h('h1', { text:'Ajustes' }));
+    root.appendChild(h('div', { class:'back' }, h('button', { class:'btn ghost', onclick:function(){ view = prevView; render(); window.scrollTo(0,0); } }, 'Voltar')));
+    accountSection(root);
+    backupSection(root);
+  }
+
+  function accountSection(root){
+    root.appendChild(h('h2', { text:'Conta' }));
+    cloudEl = h('p', { class:'sub', 'aria-live':'polite' }, CLOUD_TXT[cloudState]);
+    root.appendChild(cloudEl);
+    var msg = h('p', { class:'sub', 'aria-live':'polite' });
+    if (userId){
+      root.appendChild(h('p', {}, 'Conectado como ' + userEmail));
+      root.appendChild(h('div', { class:'choices' },
+        h('button', { class:'btn', onclick:function(){ flushDb(); pull(); } }, 'Sincronizar agora'),
+        h('button', { class:'btn', onclick:function(){
+          sb.auth.signOut().then(function(){ return startSession(null); }).then(function(){ render(); });
+        } }, 'Sair')
+      ));
+      return;
+    }
+    if (!sb) return;
+    var em = h('input', { type:'email', placeholder:'E-mail', autocomplete:'email', 'aria-label':'E-mail' });
+    var pw = h('input', { type:'password', placeholder:'Senha (mínimo 6 caracteres)', autocomplete:'current-password', 'aria-label':'Senha' });
+    root.appendChild(h('div', { class:'acct' }, em, pw));
+    root.appendChild(h('div', { class:'choices' },
+      h('button', { class:'btn', onclick:function(){ doAuth('in', em.value.trim(), pw.value, msg); } }, 'Entrar'),
+      h('button', { class:'btn', onclick:function(){ doAuth('up', em.value.trim(), pw.value, msg); } }, 'Criar conta')
+    ));
+    root.appendChild(msg);
+  }
+
+  function backupSection(root){
+    var m = backupMsg; backupMsg = '';
+    root.appendChild(h('h2', { text:'Backup' }));
+    root.appendChild(h('p', { class:'sub' }, 'Cópia extra em texto, para guardar onde quiser (notas, e-mail, Drive). Para restaurar, cole o texto na caixa.'));
+    var box = h('textarea', { class:'box', 'aria-label':'Texto do backup', placeholder:'O backup aparece aqui' });
+    var msg = h('p', { class:'sub', 'aria-live':'polite' }, m);
+    var armed = false;
+    var gen = function(){
+      box.value = JSON.stringify({ app:'caderno', v:1, entries:S.entries, weeks:S.weeks, notes:S.notes, reports:S.reports });
+      box.focus(); box.select();
+    };
+    var restoreBtn = h('button', { class:'btn' }, 'Restaurar');
+    restoreBtn.addEventListener('click', function(){
+      var p;
+      try { p = JSON.parse(box.value); } catch (e) { p = null; }
+      if (!p || !Array.isArray(p.entries)){ msg.textContent = 'Esse texto não parece um backup válido. Cole o texto completo na caixa.'; armed = false; restoreBtn.textContent = 'Restaurar'; return; }
+      if (!armed){ armed = true; restoreBtn.textContent = 'Confirmar: substitui tudo'; msg.textContent = 'Isto troca os dados atuais pelos do backup. Toque de novo para confirmar.'; return; }
+      S.entries = p.entries; S.weeks = p.weeks || {}; S.notes = p.notes || {}; S.reports = p.reports || {};
+      save(); backupMsg = 'Backup restaurado.'; render();
+    });
+    root.appendChild(h('div', { class:'choices' },
+      h('button', { class:'btn', onclick:function(){ gen(); msg.textContent = 'Backup gerado. Toque em Copiar.'; } }, 'Gerar backup'),
+      h('button', { class:'btn', onclick:function(){
+        if (!box.value) gen();
+        box.select();
+        var ok = function(){ msg.textContent = 'Copiado. Cole em um lugar seguro.'; };
+        var fail = function(){ var r = false; try { r = document.execCommand('copy'); } catch (e) {} msg.textContent = r ? 'Copiado. Cole em um lugar seguro.' : 'Não consegui copiar sozinho. Segure o texto selecionado e escolha copiar.'; };
+        try { navigator.clipboard.writeText(box.value).then(ok, fail); } catch (e) { fail(); }
+      } }, 'Copiar'),
+      restoreBtn
+    ));
+    root.appendChild(box);
+    root.appendChild(msg);
+  }
+
+  function render(focusInput){
+    var app = document.getElementById('app');
+    var scroll = window.scrollY;
+    app.textContent = '';
+    var input = null;
+    if (view==='hoje') input = viewHoje(app);
+    else if (view==='semana') viewSemana(app);
+    else if (view==='revisao') viewRevisao(app);
+    else if (view==='ajustes') viewAjustes(app);
+    else if (view==='relatorio') viewRelatorio(app);
+    else viewSumario(app);
+    var gear = h('button', { class:'gear', 'aria-label':'Ajustes', onclick:function(){ if (view !== 'ajustes'){ prevView = view; view = 'ajustes'; openId = null; render(); window.scrollTo(0,0); } } }, '⚙︎');
+    if (view === 'ajustes') gear.setAttribute('aria-current', 'page');
+    app.appendChild(gear);
+    document.querySelectorAll('nav button').forEach(function(b){
+      if (b.dataset.v===view) b.setAttribute('aria-current','page'); else b.removeAttribute('aria-current');
+    });
+    if (focusInput && input) input.focus({ preventScroll:true });
+    window.scrollTo(0, scroll);
+  }
+
+  document.querySelectorAll('nav button').forEach(function(b){
+    b.addEventListener('click', function(){ view=b.dataset.v; openId=null; render(); window.scrollTo(0,0); });
+  });
+  render();
+  initCloud();
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0){
+    navigator.serviceWorker.register('sw.js').catch(function(){});
+  }
+})();
+</script>
+</body>
+</html>
